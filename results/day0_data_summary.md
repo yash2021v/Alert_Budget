@@ -1,27 +1,27 @@
 # Day 0 data summary
 
-Generated 2026-10-21 20:30; pandas 3.0.6, pyarrow 26.0.0
+Generated 2026-10-21 20:37; pandas 2.3.3, pyarrow 26.0.0
 
 ## IBM AML HI-Small_Trans.csv
 
 - file size: 475.7 MB
 - note: the raw header has two columns both named `Account`; renamed here to From Account / To Account
-- load time: 0.3s
+- load time: 1.4s
 - rows: **5,078,345**, columns: 11
 - column names: ['Timestamp', 'From Bank', 'From Account', 'To Bank', 'To Account', 'Amount Received', 'Receiving Currency', 'Amount Paid', 'Payment Currency', 'Payment Format', 'Is Laundering']
 
 Dtypes:
 ```
-Timestamp             datetime64[us]
-From Bank                        str
-From Account                     str
-To Bank                          str
-To Account                       str
+Timestamp             datetime64[ns]
+From Bank                     object
+From Account                  object
+To Bank                       object
+To Account                    object
 Amount Received              float64
-Receiving Currency               str
+Receiving Currency            object
 Amount Paid                  float64
-Payment Currency                 str
-Payment Format                   str
+Payment Currency              object
+Payment Format                object
 Is Laundering                  int64
 ```
 First 3 rows:
@@ -58,11 +58,11 @@ Bitcoin          146091  0.000383
 
 Dtypes:
 ```
-Bank Name         str
-Bank ID           str
-Account Number    str
-Entity ID         str
-Entity Name       str
+Bank Name         object
+Bank ID           object
+Account Number    object
+Entity ID         object
+Entity Name       object
 ```
 First 3 rows:
 ```
@@ -162,7 +162,7 @@ to the matching trans row(s).
 ### elliptic_txs_features.csv (no header)
 
 - first line has 167 fields, first value `230425980` is numeric -> confirms no header
-- load time: 0.5s
+- load time: 0.6s
 - rows: **203,769**, columns: 167
 - column names: ['txId', 'time_step', 'f1', 'f2', 'f3', 'f4', 'f5', 'f6'] ... ['f163', 'f164', 'f165']
 
@@ -259,6 +259,6 @@ time_step
 ## SAML-D.csv (out of scope for the 5-day plan; load check only)
 
 - file size: 996.2 MB
-- load time: 0.9s
+- load time: 1.2s
 - rows: **9,504,852**; columns: ['Time', 'Date', 'Sender_account', 'Receiver_account', 'Amount', 'Payment_currency', 'Received_currency', 'Sender_bank_location', 'Receiver_bank_location', 'Payment_type', 'Is_laundering', 'Laundering_type']
 - dtypes (arrow): {'Time': 'time32[s]', 'Date': 'date32[day]', 'Sender_account': 'int64', 'Receiver_account': 'int64', 'Amount': 'double', 'Payment_currency': 'string', 'Received_currency': 'string', 'Sender_bank_location': 'string', 'Receiver_bank_location': 'string', 'Payment_type': 'string', 'Is_laundering': 'int64', 'Laundering_type': 'string'}
