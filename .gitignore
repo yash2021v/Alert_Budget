@@ -1,0 +1,15 @@
+data/
+*.csv
+data/**/*.txt
+!results/*.csv
+__pycache__/
+*.pyc
+.venv/
+.ipynb_checkpoints/
+.DS_Store
+# large model binaries
+results/**/*.pkl
+results/**/*.joblib
+results/**/*.bin
+results/**/*.model
+results/**/*.parquet
