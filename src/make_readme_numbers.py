@@ -13,11 +13,17 @@ def read(name):
     return pd.read_csv(C.RESULTS / name)
 
 
+def _fmt(v, floatfmt):
+    if isinstance(v, (float, np.floating)):
+        return str(int(v)) if float(v).is_integer() and abs(v) >= 100 else floatfmt.format(v)
+    return str(v)
+
+
 def md_table(df: pd.DataFrame, floatfmt="{:.3f}") -> str:
     cols = list(df.columns)
     out = ["| " + " | ".join(cols) + " |", "|" + "---|" * len(cols)]
     for _, r in df.iterrows():
-        out.append("| " + " | ".join(floatfmt.format(v) if isinstance(v, (float, np.floating)) else str(v) for v in r) + " |")
+        out.append("| " + " | ".join(_fmt(v, floatfmt) for v in r) + " |")
     return "\n".join(out)
 
 
@@ -27,15 +33,14 @@ def key_numbers() -> pd.DataFrame:
     gate = read("validity_gate.csv")
     g = gate[gate.gating]
     syn = g[g.check == "synthetic"]
-    rows.append(("Certificate validity (exchangeable data)",
-                 f"{int(g['pass'].sum())}/{len(g)} gating gate configurations pass; synthetic coverage {syn.coverage.min():.3f}-{syn.coverage.max():.3f} "
-                 f"vs nominal 0.90/0.95", "results/validity_gate.csv (gating, pass, coverage)"))
     cur = read("miss_rate_certified_vs_realised.csv")
     cp = cur[(cur.scorer == primary) & np.isclose(cur.delta, 0.10)]
-    rows.append(("Temporal split breaks it (IBM, primary scorer, delta 0.10)",
-                 f"bound covers realised test miss at {int(cp.covered.sum())}/{len(cp)} budgets; realised minus bound ranges "
-                 f"{(cp.test_miss_rate_realised - cp.certified_bound).min():+.3f} to {(cp.test_miss_rate_realised - cp.certified_bound).max():+.3f}",
-                 "results/miss_rate_certified_vs_realised.csv (covered, certified_bound, test_miss_rate_realised)"))
+    gap = cp.test_miss_rate_realised - cp.certified_bound
+    rows.append(("Valid when exchangeable, broken by time (IBM, primary scorer, delta 0.10)",
+                 f"{int(g['pass'].sum())}/{len(g)} gate configurations pass (synthetic coverage {syn.coverage.min():.3f}-{syn.coverage.max():.3f} vs nominal 0.90/0.95), "
+                 f"but on the temporal split the bound covers the realised test miss at {int(cp.covered.sum())}/{len(cp)} budgets "
+                 f"(realised minus bound {gap.min():+.3f} to {gap.max():+.3f})",
+                 "results/validity_gate.csv; results/miss_rate_certified_vs_realised.csv"))
     h3 = read("h3_aggregation.csv")
     h = h3[np.isclose(h3.delta, 0.10) & (h3.K_frac == 0.01)].set_index("variant")
     rows.append(("Aggregation (max over transactions vs direct), K = 1% of period",
@@ -52,7 +57,7 @@ def key_numbers() -> pd.DataFrame:
     e = h4[(h4.L == 2) & (h4.q == 0.10)].set_index("arm")
     rows.append(("Elliptic shutdown (L = 2, q = 10%): error frequency before -> from step 43",
                  "; ".join(f"{a} {e.loc[a, 'err_freq_before']:.2f} -> {e.loc[a, 'err_freq_after']:.2f}"
-                           for a in ("static", "rolling", "aci", "aci_offset")) + " (target 0.10; no arm recovers)",
+                           for a in ("static", "rolling", "aci", "aci_offset")) + f" (target 0.10; recovery lag at L = 2, q = 10%: " + ", ".join(f"{a} {e.loc[a, 'recovery_lag']}" for a in ("static", "rolling", "aci", "aci_offset")) + ")",
                  "results/h4_elliptic_summary.csv"))
     h2 = read("h2_synthetic_delay.csv")
     a = h2[h2.t == "all"].set_index(["d", "L"]).coverage
