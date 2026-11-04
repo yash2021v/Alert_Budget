@@ -110,3 +110,16 @@ def test_per_period_k_array_hand_example():
     K = [1, 1, 1, 1, 2, 2, 2]
     assert missed_counts(scores, labels, periods, K) == (3, 3)   # .8 and .1 outside top-1; .3 outside top-2
     assert missed_counts(scores, labels, periods, [2, 2, 2, 2, 3, 3, 3]) == (1, 3)
+
+
+def test_group_certificates_tiny_example():
+    from src.certify import group_certificates
+    flags = [True, True, False, False, False, True]
+    groups = ["A", "A", "A", "B", "B", "C"]
+    out = group_certificates(flags, groups, 0.10)
+    assert out["A"]["n_pos"] == 3 and out["A"]["n_missed"] == 2
+    assert out["B"]["n_pos"] == 2 and out["B"]["n_missed"] == 0
+    assert out["C"]["upper_bound"] == 1.0                       # k = n
+    assert out["B"]["upper_bound"] == pytest.approx(1 - 0.1 ** (1 / 2))
+    assert out["A"]["upper_bound"] == pytest.approx(
+        binomtest(2, 3).proportion_ci(confidence_level=0.8, method="exact").high, abs=1e-9)

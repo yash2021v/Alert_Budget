@@ -87,3 +87,21 @@ def certify(scores, labels, period_ids, K, delta: float) -> dict:
             "point_miss_rate": (n_missed / n_pos) if n_pos else float("nan"),
             "upper_bound": clopper_pearson_upper(n_missed, n_pos, delta),
             "K": int(K) if np.ndim(K) == 0 else float(np.mean(K)), "delta": float(delta)}
+
+
+def group_certificates(miss_flags, groups, delta: float) -> dict:
+    """Group-conditional certificates from per-positive miss flags (from `missed_flags`) and a group label per
+    positive. Returns {group: {"n_pos", "n_missed", "point_miss_rate", "upper_bound"}}, each an exact
+    Clopper-Pearson bound using only that group's positives. The reviewed set is NOT group-specific (typology is
+    unknown for negatives), so each bound certifies how often the shared top-K misses that group's positives.
+    Same validity condition as `certify`, now needing exchangeability within the group.
+    """
+    flags = np.asarray(miss_flags, dtype=bool)
+    groups = np.asarray(groups)
+    out = {}
+    for g in sorted(set(groups.tolist())):
+        m = flags[groups == g]
+        n, k = len(m), int(m.sum())
+        out[g] = {"n_pos": n, "n_missed": k, "point_miss_rate": k / n if n else float("nan"),
+                  "upper_bound": clopper_pearson_upper(k, n, delta)}
+    return out
