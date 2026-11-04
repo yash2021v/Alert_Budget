@@ -25,7 +25,7 @@ from src import validity_gate as G
 
 N_PERIODS, EVAL = 30, range(20, 30)
 DRIFT_START = 19
-W, DELTA, TRIALS = 4, 0.10, 1000
+W, DELTA, TRIALS = 4, 0.10, C.MC
 DS_ORIG, DS_EXT = [0.0, 0.05, 0.10, 0.20], [0.005, 0.01, 0.02]    # DS_EXT: post-hoc finer grid added after Day 4 (floor effect)
 DS, LS = DS_ORIG + DS_EXT, [0, 2, 4]
 K = int(round(0.01 * G.N_ENT))

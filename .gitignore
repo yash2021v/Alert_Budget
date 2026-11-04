@@ -13,3 +13,4 @@ results/**/*.joblib
 results/**/*.bin
 results/**/*.model
 results/**/*.parquet
+results_quick/

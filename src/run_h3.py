@@ -16,7 +16,7 @@ from src import transaction_model as TM
 
 K_FRACS = [0.001, 0.0025, 0.005, 0.01, 0.02, 0.03, 0.05]
 DELTAS = [0.10, 0.05]
-DRAWS = 1000
+DRAWS = C.MC
 
 
 def variant_tables() -> dict:

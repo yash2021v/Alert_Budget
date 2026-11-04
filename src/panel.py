@@ -55,6 +55,10 @@ def build_panel(use_cache: bool = True) -> pd.DataFrame:
     ent = rows.groupby(["acct_key", "period"], sort=True)["is_laundering"].max().rename("label").reset_index()
     ent["label"] = ent["label"].astype("int8")
     ent["period"] = ent["period"].astype("int16")
+    if C.SAMPLE_FRAC < 1.0:                       # quick mode: random sample of accounts (seeded); their features stay exact
+        keys = np.sort(ent["acct_key"].unique())
+        keep = np.random.default_rng(C.SEED).choice(keys, int(C.SAMPLE_FRAC * len(keys)), replace=False)
+        ent = ent[ent["acct_key"].isin(keep)].reset_index(drop=True)
     ent["typology"] = pd.Series(pd.NA, index=ent.index, dtype="object")
     pos = ent["label"] == 1
     typ = assign_typology(ent[pos], tx)

@@ -33,8 +33,8 @@ AUC = 0.85
 MU = np.sqrt(2) * norm.ppf(AUC)       # pos ~ N(MU, 1), neg ~ N(0, 1)  ->  AUC = Phi(MU / sqrt 2)
 K_FRACS = [0.0025, 0.01, 0.05]
 DELTAS = [0.10, 0.05]
-TRIALS = 1000
-TRUTH_PERIODS = 20000                 # fresh periods for the "true" miss rate (2,000 was too noisy: its error
+TRIALS = C.MC
+TRUTH_PERIODS = 2000 if C.QUICK else 20000                 # fresh periods for the "true" miss rate (2,000 was too noisy: its error
                                       # is ~10% of the estimator SD and shifted coverage by a few points)
 
 

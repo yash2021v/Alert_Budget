@@ -13,7 +13,9 @@ PERIOD = 14
 @pytest.fixture(scope="module")
 def ctx():
     tx, ent, stats, t0, currencies = TM.load_context()
-    sample = tx[tx.period == PERIOD].sample(4000, random_state=0)
+    cur = tx[tx.period == PERIOD]
+    ok = pd.MultiIndex.from_arrays([cur.from_key, cur.period]).isin(ent.index) & pd.MultiIndex.from_arrays([cur.to_key, cur.period]).isin(ent.index)
+    sample = cur[ok].sample(4000, random_state=0)         # quick mode only has features for sampled accounts
     accts = np.unique(np.r_[sample.from_key, sample.to_key])
     panel = pd.DataFrame({"acct_key": accts, "period": np.int16(PERIOD)})
     return tx, ent, stats, t0, currencies, sample, panel

@@ -12,12 +12,16 @@ from src import scoring
 from src import train as T
 
 if __name__ == "__main__":
-    old = json.loads((C.RESULTS / "day1_model_metrics_v2_table_order_ties.json").read_text())
+    v2 = C.RESULTS / "day1_model_metrics_v2_table_order_ties.json"
+    if not v2.exists():                      # fresh run: keep the table-order metrics train.py just wrote
+        v2.write_text((C.RESULTS / "day1_model_metrics.json").read_text())
+    old = json.loads(v2.read_text())
     sc = scoring.load_scores()                                   # seeded shuffle done here
     te, ca = sc[sc.split == "test"], sc[sc.split == "calibration"]
     avg = te.groupby("period").size().mean()
     ks = {f: max(1, int(round(f * avg))) for f in T.K_FRACTIONS}
-    assert list(ks.values()) == list(old["K_values"].values())   # same K values as before
+    if not C.QUICK:
+        assert list(ks.values()) == list(old["K_values"].values())   # same K values as before
     new = dict(old)
     new["test"] = T.evaluate(te, ks)
     new["calibration_sanity"] = {"roc_auc": float(roc_auc_score(ca.label, ca.margin)),

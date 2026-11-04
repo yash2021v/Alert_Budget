@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from src import config as C
 from src import scoring
 
 
@@ -27,7 +28,7 @@ def test_margin_is_monotone_in_probability_everywhere(sc):
 def test_probability_ties_are_resolved_by_margin(sc):
     top = sc[sc["score"] >= 1.0]
     # probability gives one level for these rows; margin separates them into thousands of levels
-    assert len(top) > 10_000 and top["margin"].nunique() > 1_000
+    assert len(top) > 10_000 * C.SAMPLE_FRAC and top["margin"].nunique() > 1_000 * C.SAMPLE_FRAC
 
 
 def test_load_scores_is_seeded():

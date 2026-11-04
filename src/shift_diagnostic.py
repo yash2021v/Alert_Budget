@@ -16,7 +16,7 @@ from src import scoring
 from src.run_budget_curve import K_FRACS
 
 DELTAS = [0.10, 0.05]
-DRAWS = 1000
+DRAWS = C.MC
 
 
 def split_flags(df, k):

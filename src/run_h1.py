@@ -25,7 +25,7 @@ from src import scoring
 
 K_FRACS = [0.005, 0.01, 0.02, 0.05]
 DELTAS = [0.10, 0.05]
-DRAWS = 1000
+DRAWS = C.MC
 LOW_N = 30
 
 

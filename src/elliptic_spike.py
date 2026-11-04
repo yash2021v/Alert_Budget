@@ -25,7 +25,7 @@ TRAIN, CAL, EVAL = (1, 24), (25, 34), (35, 49)
 QS = [0.10, 0.20]
 DELTA = 0.10
 SHUTDOWN = 43
-DRAWS = 1000
+DRAWS = C.MC
 PARAMS = dict(objective="binary", n_estimators=300, learning_rate=0.05, num_leaves=31, min_child_samples=50,
               subsample=0.8, subsample_freq=1, colsample_bytree=0.8, reg_lambda=1.0, random_state=C.SEED,
               deterministic=True, force_row_wise=True, n_jobs=4, verbose=-1)
