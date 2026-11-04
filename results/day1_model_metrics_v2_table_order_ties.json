@@ -1,0 +1,238 @@
+{
+  "params": {
+    "objective": "binary",
+    "n_estimators": 300,
+    "learning_rate": 0.05,
+    "num_leaves": 31,
+    "min_child_samples": 100,
+    "subsample": 0.8,
+    "subsample_freq": 1,
+    "colsample_bytree": 0.8,
+    "reg_lambda": 1.0,
+    "random_state": 42,
+    "deterministic": true,
+    "force_row_wise": true,
+    "n_jobs": 4,
+    "verbose": -1,
+    "scale_pos_weight": 476.26094117647057
+  },
+  "features": [
+    "cur_n_tx",
+    "cur_out_deg",
+    "cur_in_deg",
+    "cur_in_out_ratio",
+    "cur_out_cp",
+    "cur_in_cp",
+    "cur_n_counterparties",
+    "cur_cp_diversity",
+    "cur_n_currencies",
+    "cur_amt_mean",
+    "cur_amt_std",
+    "cur_amt_max",
+    "cur_amt_skew",
+    "cur_amt_total",
+    "cur_cross_bank_share",
+    "cur_burstiness",
+    "cur_fmt_ACH",
+    "cur_fmt_Bitcoin",
+    "cur_fmt_Cash",
+    "cur_fmt_Cheque",
+    "cur_fmt_Credit_Card",
+    "cur_fmt_Reinvestment",
+    "cur_fmt_Wire",
+    "lb_n_tx",
+    "lb_out_deg",
+    "lb_in_deg",
+    "lb_in_out_ratio",
+    "lb_out_cp",
+    "lb_in_cp",
+    "lb_n_counterparties",
+    "lb_cp_diversity",
+    "lb_n_currencies",
+    "lb_amt_mean",
+    "lb_amt_std",
+    "lb_amt_max",
+    "lb_amt_skew",
+    "lb_amt_total",
+    "lb_cross_bank_share",
+    "lb_burstiness",
+    "lb_fmt_ACH",
+    "lb_fmt_Bitcoin",
+    "lb_fmt_Cash",
+    "lb_fmt_Cheque",
+    "lb_fmt_Credit_Card",
+    "lb_fmt_Reinvestment",
+    "lb_fmt_Wire",
+    "has_history",
+    "ratio_n_tx",
+    "ratio_out_deg",
+    "ratio_amt_total"
+  ],
+  "avg_entity_periods_per_period_test": 155218.75,
+  "K_values": {
+    "0.10%": 155,
+    "0.25%": 388,
+    "0.50%": 776,
+    "1.00%": 1552,
+    "2.00%": 3104
+  },
+  "test": {
+    "n_rows": 620875,
+    "n_pos": 1614,
+    "roc_auc": 0.8600352961579638,
+    "pr_auc": 0.02953991347295911,
+    "recall_at_k": {
+      "K=155": {
+        "pooled": 0.01858736059479554,
+        "mean_over_periods": 0.018816293174079412
+      },
+      "K=388": {
+        "pooled": 0.04584882280049566,
+        "mean_over_periods": 0.046686254753079755
+      },
+      "K=776": {
+        "pooled": 0.0885997521685254,
+        "mean_over_periods": 0.08965729062849913
+      },
+      "K=1552": {
+        "pooled": 0.18277571251548946,
+        "mean_over_periods": 0.184399448535835
+      },
+      "K=3104": {
+        "pooled": 0.3667905824039653,
+        "mean_over_periods": 0.3713336629393029
+      }
+    },
+    "by_typology": {
+      "BIPARTITE": {
+        "n_pos": 82,
+        "roc_auc": 0.8385877604466473,
+        "pr_auc": 0.0013770290855989328,
+        "recall_at_k": {
+          "K=155": 0.036585365853658534,
+          "K=388": 0.04878048780487805,
+          "K=776": 0.0975609756097561,
+          "K=1552": 0.2073170731707317,
+          "K=3104": 0.3048780487804878
+        }
+      },
+      "CYCLE": {
+        "n_pos": 96,
+        "roc_auc": 0.8793216077308276,
+        "pr_auc": 0.0020568224760099015,
+        "recall_at_k": {
+          "K=155": 0.0625,
+          "K=388": 0.09375,
+          "K=776": 0.16666666666666666,
+          "K=1552": 0.22916666666666666,
+          "K=3104": 0.4375
+        }
+      },
+      "FAN-IN": {
+        "n_pos": 89,
+        "roc_auc": 0.9026194034212107,
+        "pr_auc": 0.0022101144951830604,
+        "recall_at_k": {
+          "K=155": 0.033707865168539325,
+          "K=388": 0.0898876404494382,
+          "K=776": 0.16853932584269662,
+          "K=1552": 0.2808988764044944,
+          "K=3104": 0.4943820224719101
+        }
+      },
+      "FAN-OUT": {
+        "n_pos": 100,
+        "roc_auc": 0.918057854442634,
+        "pr_auc": 0.0025117101097859498,
+        "recall_at_k": {
+          "K=155": 0.04,
+          "K=388": 0.05,
+          "K=776": 0.1,
+          "K=1552": 0.27,
+          "K=3104": 0.43
+        }
+      },
+      "GATHER-SCATTER": {
+        "n_pos": 196,
+        "roc_auc": 0.9151533572488262,
+        "pr_auc": 0.004923906125621485,
+        "recall_at_k": {
+          "K=155": 0.02040816326530612,
+          "K=388": 0.05102040816326531,
+          "K=776": 0.12244897959183673,
+          "K=1552": 0.23469387755102042,
+          "K=3104": 0.45918367346938777
+        }
+      },
+      "RANDOM": {
+        "n_pos": 67,
+        "roc_auc": 0.9423741157822514,
+        "pr_auc": 0.0017159725164411757,
+        "recall_at_k": {
+          "K=155": 0.029850746268656716,
+          "K=388": 0.04477611940298507,
+          "K=776": 0.08955223880597014,
+          "K=1552": 0.26865671641791045,
+          "K=3104": 0.417910447761194
+        }
+      },
+      "SCATTER-GATHER": {
+        "n_pos": 160,
+        "roc_auc": 0.9131926703764648,
+        "pr_auc": 0.0037990853406498297,
+        "recall_at_k": {
+          "K=155": 0.01875,
+          "K=388": 0.04375,
+          "K=776": 0.1,
+          "K=1552": 0.175,
+          "K=3104": 0.375
+        }
+      },
+      "STACK": {
+        "n_pos": 161,
+        "roc_auc": 0.8873099604466438,
+        "pr_auc": 0.003371762136633881,
+        "recall_at_k": {
+          "K=155": 0.006211180124223602,
+          "K=388": 0.018633540372670808,
+          "K=776": 0.043478260869565216,
+          "K=1552": 0.12422360248447205,
+          "K=3104": 0.36024844720496896
+        }
+      },
+      "UNATTRIBUTED": {
+        "n_pos": 663,
+        "roc_auc": 0.8013606791570032,
+        "pr_auc": 0.009068687528481126,
+        "recall_at_k": {
+          "K=155": 0.006033182503770739,
+          "K=388": 0.03770739064856712,
+          "K=776": 0.06184012066365008,
+          "K=1552": 0.138763197586727,
+          "K=3104": 0.3046757164404223
+        }
+      }
+    }
+  },
+  "calibration_sanity": {
+    "roc_auc": 0.8545397278535984,
+    "pr_auc": 0.0470463624557481
+  },
+  "top_feature_gain_share": {
+    "cur_amt_max": 0.6599,
+    "cur_out_deg": 0.0545,
+    "cur_cp_diversity": 0.0509,
+    "cur_amt_skew": 0.0362,
+    "cur_amt_mean": 0.0289,
+    "lb_in_cp": 0.0158,
+    "lb_amt_total": 0.0137,
+    "lb_amt_std": 0.013,
+    "cur_fmt_Credit_Card": 0.011,
+    "cur_amt_std": 0.0109,
+    "cur_amt_total": 0.0107,
+    "cur_fmt_ACH": 0.0102,
+    "cur_fmt_Cheque": 0.0099,
+    "ratio_amt_total": 0.0098,
+    "lb_fmt_Cheque": 0.008
+  }
+}

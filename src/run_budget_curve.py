@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 
 from src import certify as CE
 from src import config as C
+from src import scoring
 
 K_FRACS = [0.001, 0.0025, 0.005, 0.01, 0.02, 0.03, 0.05]
 DELTAS = [0.10, 0.05]
@@ -18,16 +19,16 @@ OUT = C.RESULTS / "miss_rate_certified_vs_realised.csv"
 
 
 def build_curve(scores: pd.DataFrame) -> pd.DataFrame:
-    # shuffle once so exact score ties are not resolved by table order (see certify.py)
-    cal = scores[scores["split"] == "calibration"].sample(frac=1.0, random_state=C.SEED)
-    test = scores[scores["split"] == "test"].sample(frac=1.0, random_state=C.SEED)
+    # `scores` comes from scoring.load_scores(): ranked by margin, residual ties broken by one seeded shuffle
+    cal = scores[scores["split"] == "calibration"]
+    test = scores[scores["split"] == "test"]
     avg = test.groupby("period").size().mean()          # same base as Day 1 K values (155, 388, ...)
     rows = []
     for f in K_FRACS:
         K = int(round(f * avg))
-        t_missed, t_pos = CE.missed_counts(test["score"], test["label"], test["period"], K)
+        t_missed, t_pos = CE.missed_counts(test["margin"], test["label"], test["period"], K)
         for d in DELTAS:
-            c = CE.certify(cal["score"], cal["label"], cal["period"], K, d)
+            c = CE.certify(cal["margin"], cal["label"], cal["period"], K, d)
             realised = t_missed / t_pos
             rows.append(dict(K=K, K_frac=f, delta=d, n_cal_pos=c["n_pos"], cal_miss_rate=c["point_miss_rate"],
                              certified_bound=c["upper_bound"], n_test_pos=t_pos, test_miss_rate_realised=realised,
@@ -60,7 +61,7 @@ def plot(df):
 
 
 if __name__ == "__main__":
-    df = build_curve(pd.read_parquet(C.PROCESSED / "scores.parquet"))
+    df = build_curve(scoring.load_scores())
     df.to_csv(OUT, index=False)
     plot(df)
     print(df.to_string(index=False, float_format=lambda x: f"{x:.4f}"))

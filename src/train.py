@@ -29,9 +29,13 @@ def load_table() -> pd.DataFrame:
     return df
 
 
+RANK_COL = "margin"   # raw LightGBM score; probabilities saturate at 1.0 and create huge tie blocks
+
+
 def recall_at_k(df: pd.DataFrame, k: int, mask: pd.Series | None = None) -> dict:
-    """Per-period top-k by score. Recall = captured positives / positives (pooled and mean over periods)."""
-    top = df.sort_values("score", ascending=False).groupby("period").head(k)
+    """Per-period top-k by `margin` (stable sort: residual ties follow the table order, so shuffle the table
+    once with a seed before calling; see scoring.py). Recall = captured positives / positives (pooled and mean over periods)."""
+    top = df.sort_values(RANK_COL, ascending=False, kind="stable").groupby("period").head(k)
     sel = top if mask is None else top[mask.loc[top.index]]
     pos = df if mask is None else df[mask]
     pos = pos[pos["label"] == 1]
@@ -42,7 +46,7 @@ def recall_at_k(df: pd.DataFrame, k: int, mask: pd.Series | None = None) -> dict
 
 
 def evaluate(df: pd.DataFrame, ks: dict) -> dict:
-    y, s = df["label"], df["score"]
+    y, s = df["label"], df[RANK_COL]
     out = {"n_rows": int(len(df)), "n_pos": int(y.sum()),
            "roc_auc": float(roc_auc_score(y, s)), "pr_auc": float(average_precision_score(y, s)),
            "recall_at_k": {f"K={k}": recall_at_k(df, k) for k in ks.values()}}
@@ -69,18 +73,21 @@ if __name__ == "__main__":
     model = lgb.LGBMClassifier(**params).fit(tr[F.FEATURE_COLS], tr["label"])
     for d in (ca, te):
         d["score"] = model.predict_proba(d[F.FEATURE_COLS])[:, 1]
+        d["margin"] = model.predict(d[F.FEATURE_COLS], raw_score=True)
+    ca = ca.sample(frac=1.0, random_state=C.SEED)   # one seeded shuffle: residual margin ties broken randomly
+    te = te.sample(frac=1.0, random_state=C.SEED)
     avg_rows = te.groupby("period").size().mean()
     ks = {f: max(1, int(round(f * avg_rows))) for f in K_FRACTIONS}
     metrics = {"params": params, "features": F.FEATURE_COLS, "avg_entity_periods_per_period_test": float(avg_rows),
                "K_values": {f"{f:.2%}": k for f, k in ks.items()}, "test": evaluate(te, ks),
-               "calibration_sanity": {"roc_auc": float(roc_auc_score(ca.label, ca.score)),
-                                      "pr_auc": float(average_precision_score(ca.label, ca.score))}}
+               "calibration_sanity": {"roc_auc": float(roc_auc_score(ca.label, ca.margin)),
+                                      "pr_auc": float(average_precision_score(ca.label, ca.margin))}}
     imp = pd.Series(model.booster_.feature_importance("gain"), index=F.FEATURE_COLS).sort_values(ascending=False)
     metrics["top_feature_gain_share"] = (imp / imp.sum()).round(4).head(15).to_dict()
     C.RESULTS.mkdir(exist_ok=True)
     METRICS_PATH.write_text(json.dumps(metrics, indent=2))
     joblib.dump(model, MODEL_PATH)
-    cols = ["acct_key", "period", "split", "label", "typology", "score"]
+    cols = ["acct_key", "period", "split", "label", "typology", "score", "margin"]
     pd.concat([ca[cols], te[cols]]).to_parquet(SCORES_PATH)
     t = metrics["test"]
     print(f"TEST roc_auc {t['roc_auc']:.4f}  pr_auc {t['pr_auc']:.4f}  (base rate {t['n_pos'] / t['n_rows']:.4%})")
