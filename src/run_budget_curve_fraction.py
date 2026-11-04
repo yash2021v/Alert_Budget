@@ -71,6 +71,8 @@ if __name__ == "__main__":
     frac = build_fraction_curve(sc)
     frac.to_csv(OUT, index=False)
     fixed = pd.read_csv(C.RESULTS / "miss_rate_certified_vs_realised.csv")
+    if "scorer" in fixed.columns:                  # the fraction arm is run on the direct scorer: compare like with like
+        fixed = fixed[fixed.scorer == "direct"]
     write_md(fixed, frac)
     print(frac.to_string(index=False, float_format=lambda x: f"{x:.4f}"))
     print(open(C.RESULTS / "volume_decomposition.md").read())

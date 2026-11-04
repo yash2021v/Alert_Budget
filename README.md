@@ -145,3 +145,7 @@ The primary IBM scorer was chosen on the calibration split only (mean recall ove
 - **IBM delay check** (`src/ibm_delay_check.py`): thin supplementary check on periods 16-19.
 - Everything under `results/` at the git tag `results-frozen` is final; no new experiments after that tag.
 
+
+### Reproducibility
+
+`./run_all.sh --quick` (15% account sample, 100 Monte Carlo draws, writes to `results_quick/`) took 154 s in a fresh clone with a new virtualenv built from `requirements.txt`, and `ALERTBUDGET_MODE=quick pytest` passed (46 tests). Full mode in a fresh clone regenerated the frozen models from scratch (about 9 minutes in total); every result CSV and JSON then matched the committed files (maximum absolute difference 0) once the score table was put in a canonical row order before the seeded tie-break shuffle (`src/scoring.py`); without that, one test positive and some Monte Carlo columns differed by up to 0.04, purely because the regenerated parquet had a different row order. `results/day0_data_summary.md` differs between runs only in its timestamp and load times. Raw data, parquet and model binaries are git-ignored (the repository is about 3 MB).
