@@ -123,3 +123,15 @@ def test_group_certificates_tiny_example():
     assert out["B"]["upper_bound"] == pytest.approx(1 - 0.1 ** (1 / 2))
     assert out["A"]["upper_bound"] == pytest.approx(
         binomtest(2, 3).proportion_ci(confidence_level=0.8, method="exact").high, abs=1e-9)
+
+
+def test_max_over_transaction_aggregation_hand_example():
+    import pandas as pd
+    from src.transaction_model import txn_margin_max_by_entity
+    tx = pd.DataFrame({"from_key": [1, 1, 2, 3], "to_key": [2, 3, 3, 1], "period": [0, 0, 0, 1],
+                       "txn_margin": [0.5, 2.0, -1.0, 7.0]})
+    out = txn_margin_max_by_entity(tx).set_index(["acct_key", "period"])["max_txn_margin"]
+    assert out[(1, 0)] == 2.0          # sender of 0.5 and 2.0
+    assert out[(2, 0)] == 0.5          # receiver of 0.5, sender of -1.0
+    assert out[(3, 0)] == 2.0          # receiver of 2.0 and -1.0
+    assert out[(3, 1)] == 7.0 and out[(1, 1)] == 7.0   # a different period is a different entity-period
