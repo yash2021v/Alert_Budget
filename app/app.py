@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import altair as alt
+import numpy as np
 import pandas as pd
 import streamlit as st
 
@@ -12,34 +13,38 @@ st.caption("Budget-aware AML alert triage with statistically certified miss rate
 
 k = st.sidebar.slider("Daily alert budget K", min_value=100, max_value=1000, value=500, step=50)
 delay = st.sidebar.selectbox("Label delay (periods)", [0, 2, 4])
+delta = st.sidebar.selectbox("Confidence 1 - delta", [0.10, 0.05], format_func=lambda d: f"{1 - d:.0%}")
 st.sidebar.write(f"K = **{k}**, delay = **{delay}** periods")
-
-
-def chart_panel(title: str, csv_name: str):
-    st.subheader(title)
-    path = RESULTS / csv_name
-    if not path.exists():
-        st.info(f"Results not ready yet: results/{csv_name} has not been produced.")
-        return
-    df = pd.read_csv(path)
-    st.line_chart(df.set_index(df.columns[0]))
-
 
 VALIDITY = ("Validity: the certified bound holds with probability >= 1 - delta only if deployment positives are "
             "exchangeable with the calibration positives; temporal drift or dependence between periods can break it.")
 
 
+def read(name: str):
+    path = RESULTS / name
+    if not path.exists():
+        st.info(f"Results not ready yet: results/{name} has not been produced.")
+        return None
+    return pd.read_csv(path)
+
+
+def at_delta(df: pd.DataFrame) -> pd.DataFrame:
+    return df[np.isclose(df["delta"], delta)]
+
+
+def nearest(df: pd.DataFrame) -> pd.DataFrame:
+    """Rows of the computed K closest to the slider value."""
+    ks = df["K"].unique()
+    return df[df["K"] == ks[np.abs(ks - k).argmin()]]
+
+
 def miss_rate_panel():
     st.subheader("Certified vs realised miss rate")
-    path = RESULTS / "miss_rate_certified_vs_realised.csv"
-    if not path.exists():
-        st.info("Results not ready yet: results/miss_rate_certified_vs_realised.csv has not been produced.")
+    df = read("miss_rate_certified_vs_realised.csv")
+    if df is None:
         return
-    df = pd.read_csv(path)
-    delta = st.sidebar.selectbox("Confidence 1 - delta", sorted(df["delta"].unique(), reverse=True),
-                                 format_func=lambda d: f"{1 - d:.0%}")
-    d = df[df["delta"] == delta].sort_values("K")
-    row = d.iloc[(d["K"] - k).abs().argmin()]          # nearest budget in the computed grid
+    d = at_delta(df).sort_values("K")
+    row = nearest(d).iloc[0]
     long = d.melt(id_vars=["K"], value_vars=["certified_bound", "test_miss_rate_realised"],
                   var_name="series", value_name="miss_rate")
     base = alt.Chart(long).encode(x=alt.X("K:Q", scale=alt.Scale(type="log"), title="Budget K per period"),
@@ -55,9 +60,55 @@ def miss_rate_panel():
     st.caption(VALIDITY)
 
 
+def typology_panel():
+    st.subheader("Coverage by typology")
+    df = read("coverage_by_typology.csv")
+    if df is None:
+        return
+    d = nearest(at_delta(df)).copy()
+    d["group"] = np.where(d["low_n"], d["typology"] + " (low-n)", d["typology"])
+    long = d.melt(id_vars=["group", "low_n"], value_vars=["group_bound", "group_test_miss"], var_name="series",
+                  value_name="miss_rate")
+    long["series"] = long["series"].map({"group_bound": "group bound", "group_test_miss": "realised test miss"})
+    bars = alt.Chart(long).mark_bar().encode(
+        x=alt.X("group:N", title=None, sort=None), xOffset="series:N", y=alt.Y("miss_rate:Q", title="Miss rate"),
+        color=alt.Color("series:N", title=None), opacity=alt.condition(alt.datum.low_n, alt.value(0.4), alt.value(1.0)))
+    pooled = alt.Chart(pd.DataFrame({"y": [d["pooled_bound"].iloc[0]]})).mark_rule(color="black", strokeDash=[4, 4]).encode(y="y:Q")
+    st.altair_chart(bars + pooled, width="stretch")
+    st.caption(f"K = {int(d['K'].iloc[0])} (nearest to slider); dashed line = pooled bound; faded bars = fewer than 30 "
+               "calibration positives.")
+
+
+def elliptic_panel():
+    st.subheader("Elliptic: coverage over time")
+    df = read("elliptic_spike.csv")
+    if df is None:
+        return
+    q = st.radio("Budget (share of labelled nodes per step)", sorted(df["q"].unique()), horizontal=True,
+                 format_func=lambda v: f"{v:.0%}")
+    d = df[df["q"] == q]
+    x = alt.X("step:Q", title="Time step")
+    miss = alt.Chart(d).mark_line(point=True, color="#d9731a").encode(x=x, y=alt.Y("realised_miss:Q", title="Miss rate"))
+    bound = alt.Chart(d).mark_line(color="#1f5fa8").encode(x=x, y="bound:Q")
+    mark = alt.Chart(pd.DataFrame({"step": [43]})).mark_rule(color="#c0392b", strokeDash=[4, 4]).encode(x="step:Q")
+    st.altair_chart(miss + bound + mark, width="stretch")
+    st.caption("Orange = realised miss rate per step, blue = bound from steps 25-34, red dashed = step 43 (shutdown).")
+
+
+def h3_panel():
+    st.subheader("H3: direct vs max-over-transaction score")
+    df = read("h3_aggregation.csv")
+    if df is None:
+        return
+    d = at_delta(df)[["variant", "K", "certified_bound", "test_miss_realised", "covered", "recall_at_K_test",
+                      "control_coverage_vs_pooled"]]
+    st.dataframe(d.round(3), hide_index=True, width="stretch")
+
+
 miss_rate_panel()
 left, right = st.columns(2)
 with left:
-    chart_panel("Coverage by typology", "coverage_by_typology.csv")
+    typology_panel()
 with right:
-    chart_panel("Elliptic: coverage over time", "elliptic_coverage_over_time.csv")
+    elliptic_panel()
+h3_panel()
