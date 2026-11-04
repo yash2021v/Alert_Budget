@@ -90,3 +90,23 @@ def test_certify_dict():
 def test_no_positives():
     out = certify([0.1, 0.2], [0, 0], [0, 0], 1, 0.1)
     assert out["n_pos"] == 0 and out["upper_bound"] == 1.0 and math.isnan(out["point_miss_rate"])
+
+
+def test_fraction_k_is_ceil_of_q_times_n():
+    from src.certify import fraction_k
+    periods = [0] * 8 + [1] * 10 + [2] * 3
+    k = fraction_k(periods, 0.25)
+    assert list(k[:8]) == [2] * 8                       # 0.25 * 8 = 2 exactly, no float bump to 3
+    assert list(k[8:18]) == [3] * 10                    # ceil(2.5)
+    assert list(k[18:]) == [1] * 3                      # ceil(0.75)
+    assert list(fraction_k([0] * 1000, 0.001)) == [1] * 1000     # 0.001 * 1000 = 1 (not 2)
+
+
+def test_per_period_k_array_hand_example():
+    # period 0 (4 rows, K=1) and period 1 (3 rows, K=2); positives at .8 / .1 / .3
+    scores = [0.9, 0.8, 0.7, 0.1, 0.5, 0.4, 0.3]
+    labels = [0, 1, 0, 1, 0, 0, 1]
+    periods = [0, 0, 0, 0, 1, 1, 1]
+    K = [1, 1, 1, 1, 2, 2, 2]
+    assert missed_counts(scores, labels, periods, K) == (3, 3)   # .8 and .1 outside top-1; .3 outside top-2
+    assert missed_counts(scores, labels, periods, [2, 2, 2, 2, 3, 3, 3]) == (1, 3)

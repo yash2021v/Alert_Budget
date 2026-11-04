@@ -21,8 +21,18 @@ import numpy as np
 from scipy.stats import beta
 
 
-def missed_flags(scores, labels, period_ids, K: int) -> np.ndarray:
+def fraction_k(period_ids, q: float) -> np.ndarray:
+    """Per-row review budget for a fraction-of-volume budget: K_t = ceil(q * n_t), n_t = rows in the row's period.
+    (q * n_t is rounded to 9 decimals before the ceiling to avoid float noise such as 155.00000000000003 -> 156.)"""
+    u, inv, cnt = np.unique(np.asarray(period_ids), return_inverse=True, return_counts=True)
+    return np.ceil(np.round(q * cnt, 9)).astype(int)[inv]
+
+
+def missed_flags(scores, labels, period_ids, K) -> np.ndarray:
     """Boolean array over the POSITIVES (in input order): True if that positive is outside its period's top K.
+
+    K is an int (the same fixed count in every period) or an array with one budget per row, aligned with the
+    inputs (e.g. `fraction_k`); within a period all rows must carry the same K.
 
     Ranking is within each period by score descending, ties broken by input position (earlier = higher).
     A period with fewer than K entities reviews everything.
@@ -41,12 +51,13 @@ def missed_flags(scores, labels, period_ids, K: int) -> np.ndarray:
     group_start = np.maximum.accumulate(np.where(starts, np.arange(n), 0))
     rank = np.arange(n) - group_start                  # 0-based rank within period
     reviewed = np.empty(n, dtype=bool)
-    reviewed[order] = rank < K
+    kk = np.asarray(K)
+    reviewed[order] = rank < (kk if kk.ndim == 0 else kk[order])
     is_pos = labels == 1
     return ~reviewed[is_pos]
 
 
-def missed_counts(scores, labels, period_ids, K: int) -> tuple[int, int]:
+def missed_counts(scores, labels, period_ids, K) -> tuple[int, int]:
     """Return (n_missed, n_pos): positives outside the per-period top K, and ALL positives (the denominator
     is every positive in the data, not only those in the reviewed set). Tie handling: see `missed_flags`."""
     m = missed_flags(scores, labels, period_ids, K)
@@ -65,7 +76,7 @@ def clopper_pearson_upper(k: int, n: int, delta: float) -> float:
     return float(beta.ppf(1 - delta, k + 1, n - k))
 
 
-def certify(scores, labels, period_ids, K: int, delta: float) -> dict:
+def certify(scores, labels, period_ids, K, delta: float) -> dict:
     """Certify the miss rate at budget K from calibration data.
 
     Returns n_pos, n_missed, point_miss_rate, upper_bound (Clopper-Pearson, confidence 1 - delta), K, delta.
@@ -74,4 +85,5 @@ def certify(scores, labels, period_ids, K: int, delta: float) -> dict:
     n_missed, n_pos = missed_counts(scores, labels, period_ids, K)
     return {"n_pos": n_pos, "n_missed": n_missed,
             "point_miss_rate": (n_missed / n_pos) if n_pos else float("nan"),
-            "upper_bound": clopper_pearson_upper(n_missed, n_pos, delta), "K": int(K), "delta": float(delta)}
+            "upper_bound": clopper_pearson_upper(n_missed, n_pos, delta),
+            "K": int(K) if np.ndim(K) == 0 else float(np.mean(K)), "delta": float(delta)}

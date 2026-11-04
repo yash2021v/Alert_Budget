@@ -30,7 +30,7 @@ def build_curve(scores: pd.DataFrame) -> pd.DataFrame:
         for d in DELTAS:
             c = CE.certify(cal["margin"], cal["label"], cal["period"], K, d)
             realised = t_missed / t_pos
-            rows.append(dict(K=K, K_frac=f, delta=d, n_cal_pos=c["n_pos"], cal_miss_rate=c["point_miss_rate"],
+            rows.append(dict(budget_type="fixed_count", K=K, K_frac=f, delta=d, n_cal_pos=c["n_pos"], cal_miss_rate=c["point_miss_rate"],
                              certified_bound=c["upper_bound"], n_test_pos=t_pos, test_miss_rate_realised=realised,
                              covered=bool(realised <= c["upper_bound"]), recall_at_K_test=1 - realised))
     return pd.DataFrame(rows)
