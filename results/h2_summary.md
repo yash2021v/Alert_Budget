@@ -1,15 +1,11 @@
 # H2 synthetic summary
 
-With no drift (d = 0, the control) coverage is 0.916-0.920 across delays 0, 2 and 4 against a nominal 0.90, so staleness alone does not break the certificate when positives are exchangeable.
+Control (d = 0): coverage is 0.916-0.920 at delays 0, 2 and 4 against a nominal 0.90, so delay alone does not break the certificate when positives are exchangeable.
 
-At d = 0.05 coverage goes 0.091 -> 0.057 -> 0.057 as the delay grows from 0 to 2 to 4 periods (mean bound 0.859 at L = 0 versus 0.833 at L = 4).
+Finer drift grid (added post hoc because d >= 0.05 sits on the floor): coverage at L = 0 / 2 / 4 is d = 0.005: 0.833 / 0.773 / 0.731; d = 0.01: 0.753 / 0.603 / 0.504; d = 0.02: 0.539 / 0.290 / 0.206.
 
-At d = 0.1 coverage goes 0.008 -> 0.007 -> 0.006 as the delay grows from 0 to 2 to 4 periods (mean bound 0.886 at L = 0 versus 0.841 at L = 4).
+Delay effect: at d = 0.005, 0.01, 0.02 coverage at L = 0 exceeds coverage at L = 4 by more than 3 combined standard errors (d = 0.005: +0.102; d = 0.01: +0.248; d = 0.02: +0.332), so staler feedback does cost coverage once drift is slow enough for coverage to be measurable.
 
-At d = 0.2 coverage goes 0.071 -> 0.000 -> 0.000 as the delay grows from 0 to 2 to 4 periods (mean bound 0.918 at L = 0 versus 0.855 at L = 4).
+Coverage is already below 0.05 at L = 0 for d = 0.1, so the dose-response in delay cannot be seen there (floor effect).
 
-With drift the certificate fails at every delay, including L = 0: coverage is only 0.000-0.091 for d > 0, because the pool of about 1685 positives gives an interval roughly +-0.02 wide, which any systematic drift between the pool periods and period t exceeds.
-
-By comparison the effect of the delay is small: moving from L = 0 to L = 4 changes coverage by -0.036 on average over the drifting cases, while the step from d = 0 to d = 0.05 changes it by -0.825 at L = 0 (d = 0.2 is partly muddied because positives hit the negatives' mean and the clamp makes the process stationary again).
-
-So the dose-response is steep in the presence of drift and weak in the delay: with a large calibration pool, stale feedback is harmless only when the process is stationary, and any drift needs a monitor and adaptation (H4) rather than a staleness limit.
+With about 1685 positives in the pool the interval is roughly +-0.02 wide, so the certificate tolerates only drift that moves the true miss rate by less than about that much over the pool-plus-delay window; larger drifts need monitoring and adaptation (H4) rather than a staleness limit.
