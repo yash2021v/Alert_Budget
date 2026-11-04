@@ -6,8 +6,12 @@ positives of g and compare with g's realised test miss rate; we also check the P
 An exchangeable protocol (pool g's calibration+test positives, 1,000 random re-splits) separates "pooled bound
 under-serves the group / temporal drift" from sampling variation.
 
-Writes results/coverage_by_typology.csv, results/h1_bound_width.csv, results/figures/h1_typology.png.
+Writes results/coverage_by_typology.csv, results/h1_bound_width.csv, results/figures/h1_typology.png for the DIRECT (secondary)
+scorer; `--primary` runs the same analysis on the primary scorer (max-over-transaction, POST-HOC rerun added after the first
+freeze) and writes the same files with a `_primary` suffix.
 """
+import json
+
 import matplotlib
 import numpy as np
 import pandas as pd
@@ -30,9 +34,23 @@ def flags_and_groups(df, k):
     return m, df.loc[df["label"] == 1, "typology"].to_numpy()
 
 
-def main():
+def suffix_of(primary: bool) -> str:
+    return "_primary" if primary else ""
+
+
+def load_table(primary: bool):
+    if not primary:
+        return scoring.load_scores()
+    from src.run_h3 import variant_tables
+    name = json.loads((C.RESULTS / "headline_scorer.json").read_text())["primary"]
+    t = variant_tables()[name]
+    return t.assign(margin=t["score"])
+
+
+def main(primary=False):
+    suf = suffix_of(primary)
     rng = np.random.default_rng(C.SEED)
-    sc = scoring.load_scores()
+    sc = load_table(primary)
     cal, test = sc[sc.split == "calibration"], sc[sc.split == "test"]
     avg = test.groupby("period").size().mean()
     rows = []
@@ -64,11 +82,11 @@ def main():
                                  exch_coverage=cov, exch_cal_miss_mean=cal_miss[0], exch_cal_miss_q25=cal_miss[1],
                                  exch_cal_miss_q75=cal_miss[2]))
     df = pd.DataFrame(rows)
-    df.to_csv(C.RESULTS / "coverage_by_typology.csv", index=False)
+    df.to_csv(C.RESULTS / f"coverage_by_typology{suf}.csv", index=False)
     w = df[["typology", "K", "delta", "n_cal_pos", "group_cal_miss", "group_bound", "low_n"]].copy()
     w["bound_width"] = w["group_bound"] - w["group_cal_miss"]
-    w.sort_values(["delta", "K", "n_cal_pos"]).to_csv(C.RESULTS / "h1_bound_width.csv", index=False)
-    plot(df)
+    w.sort_values(["delta", "K", "n_cal_pos"]).to_csv(C.RESULTS / f"h1_bound_width{suf}.csv", index=False)
+    plot(df, suf)
     pd.set_option("display.width", 250)
     for d in DELTAS:
         s = df[(df.delta == d) & (df.K_frac == 0.01)]
@@ -84,7 +102,7 @@ def main():
               f"(nominal {1 - d}); low-n groups: {sorted(s[s.low_n].typology.unique())}")
 
 
-def plot(df):
+def plot(df, suf=""):
     fig, axes = plt.subplots(2, 2, figsize=(12, 7.5), sharey=True)
     for ax, f in zip(axes.ravel(), K_FRACS):
         s = df[(df.delta == 0.10) & (df.K_frac == f)].reset_index(drop=True)
@@ -100,8 +118,9 @@ def plot(df):
     axes[0, 0].legend(fontsize=7)
     fig.suptitle("H1: group-conditional bound vs realised miss rate (delta 0.10; hatched = fewer than 30 calibration positives)")
     fig.tight_layout()
-    fig.savefig(C.FIGURES / "h1_typology.png", dpi=130)
+    fig.savefig(C.FIGURES / f"h1_typology{suf}.png", dpi=130)
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+    main(primary="--primary" in sys.argv)

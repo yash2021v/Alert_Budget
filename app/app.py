@@ -65,7 +65,8 @@ def miss_rate_panel():
 
 def typology_panel():
     st.subheader("Coverage by typology")
-    df = read("coverage_by_typology.csv")
+    which = st.radio("Scorer", ["primary (max-over-transaction)", "direct (entity-level)"], horizontal=True, key="typ_scorer")
+    df = read("coverage_by_typology_primary.csv" if which.startswith("primary") else "coverage_by_typology.csv")
     if df is None:
         return
     d = nearest(at_delta(df)).copy()
@@ -88,7 +89,8 @@ def elliptic_panel():
     if df is None:
         return
     c1, c2, c3 = st.columns(3)
-    arm = c1.selectbox("Certificate", ["static", "rolling", "aci"], format_func=str.upper)
+    arm_names = {"static": "STATIC", "rolling": "ROLLING", "aci": "ACI", "aci_offset": "ACI-offset (post-hoc)"}
+    arm = c1.selectbox("Certificate", list(arm_names), format_func=arm_names.get)
     L = c2.selectbox("Label delay L (steps)", sorted(df["L"].unique()))
     q = c3.selectbox("Budget (share of labelled nodes)", sorted(df["q"].unique()), format_func=lambda v: f"{v:.0%}")
     d = df[(df["arm"] == arm) & (df["L"] == L) & (df["q"] == q)]
@@ -104,6 +106,8 @@ def elliptic_panel():
     m2.metric("Error frequency from step 43 on", f"{post['err'].mean():.2f}", "target 0.10", delta_color="off")
     if arm == "aci":
         st.line_chart(d.set_index("step")["delta_t"])
+    if arm == "aci_offset":
+        st.line_chart(d.set_index("step")["offset"])
     st.caption("Orange = realised miss rate, blue = bound, red rings = binomial error indicator fires, red dashed = step 43 (shutdown). "
                "Delayed feedback: at step t only labels from steps <= t - L - 1 are available.")
 
