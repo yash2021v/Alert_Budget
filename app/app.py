@@ -43,7 +43,10 @@ def miss_rate_panel():
     df = read("miss_rate_certified_vs_realised.csv")
     if df is None:
         return
-    d = at_delta(df).sort_values("K")
+    scorers = list(dict.fromkeys(df["scorer"]))                      # primary scorer is written first
+    names = {"max_txn": "max-over-transaction", "direct": "entity-level direct"}
+    scorer = st.sidebar.selectbox("Scorer", scorers, format_func=lambda s: names.get(s, s) + (" (primary)" if s == scorers[0] else ""))
+    d = at_delta(df[df["scorer"] == scorer]).sort_values("K")
     row = nearest(d).iloc[0]
     long = d.melt(id_vars=["K"], value_vars=["certified_bound", "test_miss_rate_realised"],
                   var_name="series", value_name="miss_rate")
