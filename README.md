@@ -48,3 +48,12 @@ The gate specification was corrected after a first run, because comparing a boun
 ## Day 4: headline scorer
 
 The primary IBM scorer was chosen on the calibration split only (mean recall over the K grid; see `results/headline_scorer.md`): the **max-over-transaction** score (frozen transaction LightGBM, maximum margin over the entity's transactions in the period). The entity-level direct score stays as the secondary comparison. `results/miss_rate_certified_vs_realised.csv` now has a `scorer` column (primary rows first) and the dashboard defaults to the primary scorer with the other as a toggle. The transaction model's features pass the same leakage tests as the entity features (`tests/test_txn_leakage.py`): they do not change when later transactions are deleted or the label is shuffled or removed. Earlier diagnostics (shift diagnostic, fraction-budget arm, H1) were run on the direct scorer.
+
+### Day 4: error indicator, H2, H4 arms, results freeze
+
+- **Error indicator** (`src/coverage_monitor.py`): err = 1 if misses k > binom.ppf(0.9, n, bound). A valid bound fires with probability at most 0.10 at any n; the plain "realised <= bound" flag is kept only as a noisy descriptive column.
+- **H2 synthetic** (`src/h2_synthetic.py`): positives drift toward negatives from period 20; certificate uses the 4 most recent labelled periods at delay L in {0, 2, 4}; d = 0 is the control.
+- **H4 arms** (`src/h4_elliptic.py`): STATIC, ROLLING (5-step pool) and ACI (gamma 0.05; 0.01 and 0.10 as fixed sensitivity checks) on Elliptic under delayed feedback, fraction budgets of 10% and 20%.
+- **H1 completion** (`src/h1_complete.py`): adds the pooled-bound coverage under exchangeable re-splits per group. H1 was run on the direct (secondary) scorer.
+- **IBM delay check** (`src/ibm_delay_check.py`): thin supplementary check on periods 16-19.
+- Everything under `results/` at the git tag `results-frozen` is final; no new experiments after that tag.

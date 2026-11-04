@@ -84,18 +84,28 @@ def typology_panel():
 
 def elliptic_panel():
     st.subheader("Elliptic: coverage over time")
-    df = read("elliptic_spike.csv")
+    df = read("h4_elliptic_arms.csv")
     if df is None:
         return
-    q = st.radio("Budget (share of labelled nodes per step)", sorted(df["q"].unique()), horizontal=True,
-                 format_func=lambda v: f"{v:.0%}")
-    d = df[df["q"] == q]
+    c1, c2, c3 = st.columns(3)
+    arm = c1.selectbox("Certificate", ["static", "rolling", "aci"], format_func=str.upper)
+    L = c2.selectbox("Label delay L (steps)", sorted(df["L"].unique()))
+    q = c3.selectbox("Budget (share of labelled nodes)", sorted(df["q"].unique()), format_func=lambda v: f"{v:.0%}")
+    d = df[(df["arm"] == arm) & (df["L"] == L) & (df["q"] == q)]
     x = alt.X("step:Q", title="Time step")
-    miss = alt.Chart(d).mark_line(point=True, color="#d9731a").encode(x=x, y=alt.Y("realised_miss:Q", title="Miss rate"))
+    miss = alt.Chart(d).mark_line(point=True, color="#d9731a").encode(x=x, y=alt.Y("realised_miss:Q", title="Miss rate", scale=alt.Scale(domain=[0, 1])))
     bound = alt.Chart(d).mark_line(color="#1f5fa8").encode(x=x, y="bound:Q")
+    errs = alt.Chart(d[d["err"] == 1]).mark_point(size=160, color="#c0392b", filled=False).encode(x="step:Q", y="realised_miss:Q")
     mark = alt.Chart(pd.DataFrame({"step": [43]})).mark_rule(color="#c0392b", strokeDash=[4, 4]).encode(x="step:Q")
-    st.altair_chart(miss + bound + mark, width="stretch")
-    st.caption("Orange = realised miss rate per step, blue = bound from steps 25-34, red dashed = step 43 (shutdown).")
+    st.altair_chart(miss + bound + errs + mark, width="stretch")
+    pre, post = d[(d["step"] < 43) & (d["n_illicit"] > 0)], d[(d["step"] >= 43) & (d["n_illicit"] > 0)]
+    m1, m2 = st.columns(2)
+    m1.metric("Error frequency before step 43", f"{pre['err'].mean():.2f}")
+    m2.metric("Error frequency from step 43 on", f"{post['err'].mean():.2f}", "target 0.10", delta_color="off")
+    if arm == "aci":
+        st.line_chart(d.set_index("step")["delta_t"])
+    st.caption("Orange = realised miss rate, blue = bound, red rings = binomial error indicator fires, red dashed = step 43 (shutdown). "
+               "Delayed feedback: at step t only labels from steps <= t - L - 1 are available.")
 
 
 def h3_panel():

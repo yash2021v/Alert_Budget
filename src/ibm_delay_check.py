@@ -50,7 +50,7 @@ def main():
           "NOTE: only 4 evaluation periods (16-19) per delay, so each cell is a handful of binomial draws; this is supplementary to "
           "the synthetic H2 dose-response and the Elliptic H4 arms and should not be read as evidence on its own.", "",
           f"Scorer: {primary}. Delta 0.10, error indicator with delta_err 0.10 (target error frequency 0.10).", "",
-          s.round(3).to_markdown() if hasattr(s, "to_markdown") else s.round(3).to_string(), "",
+          s.round(3).to_string(), "",
           "Error frequency by K and delay:", "", by_k.round(2).to_string()]
     (C.RESULTS / "ibm_delay_check.md").write_text("\n".join(md) + "\n")
     print("\n".join(md))

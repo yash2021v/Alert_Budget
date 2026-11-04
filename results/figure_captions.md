@@ -1,0 +1,19 @@
+# Figure captions
+
+All bounds are exact one-sided Clopper-Pearson upper confidence bounds on a miss rate (missed positives / all positives, positives outside the per-period top-K by raw margin). **Validity condition for every certified bound shown:** it covers the true miss rate with probability at least 1 - delta only if positives seen at deployment are exchangeable with the calibration positives; temporal drift and dependence between periods can break this, and several figures below show exactly that.
+
+**budget_curve.png** (`src/run_budget_curve.py`). Certified bound (blue) and realised test miss rate (orange) against the budget K as a share of the average period size, for the primary max-over-transaction scorer, calibrated on the calibration split (periods 12-15) and evaluated on the test split (16-19); left panel delta 0.10, right panel delta 0.05; red rings mark budgets where the realised rate is above the bound. The bound is valid only if test positives are exchangeable with calibration positives, which the later drift figures show does not hold here.
+
+**validity_gate.png** (`src/validity_gate.py`). Realised coverage of the true (or whole-population) miss rate by the certified bound, against the nominal level, for every gate configuration over 1,000 trials; the grey band runs from nominal minus 2 standard errors to nominal, green dots passed the gate, grey dots are informational non-gating rows. It tests the code under forced exchangeability only, not the deployment.
+
+**shift_diagnostic.png** (`src/shift_diagnostic.py`). Left: miss rate per period (12-19) at each budget on the direct scorer, with the calibration/test boundary dashed. Right: coverage at delta 0.10 when calibration and test miss flags are pooled and re-split at random (control; blue and orange lines) versus the real temporal split (red crosses, 1 = covered). Coverage returning to nominal in the control but not in time order points to shift, and the control itself assumes exchangeability by construction.
+
+**h1_typology.png** (`src/run_h1.py`). Per-typology Clopper-Pearson bound (blue) against the realised test miss rate (orange) for four budgets on the direct scorer, with the pooled bound as a dashed line; hatched bars have fewer than 30 calibration positives (none here). Each group bound needs exchangeability within the group; the pooled bound additionally needs the groups to share one miss rate.
+
+**elliptic_spike.png** (`src/elliptic_spike.py`). Realised miss rate per time step against the bound from calibration steps 25-34, for budgets of 10% and 20% of labelled nodes per step, with the step-43 shutdown dashed and uncovered steps ringed. The bound holds only if later steps are exchangeable with steps 25-34; the figure shows that this fails after the shutdown.
+
+**h2_synthetic_delay.png** (`src/h2_synthetic.py`). Coverage of the true miss rate at periods 20-29 by a certificate built from the 4 most recent labelled periods, against the label delay L, one line per drift speed d (error bars two standard errors, dotted line nominal 0.90). The d = 0 control stays above nominal; any drift removes coverage because the bound is only valid for exchangeable positives.
+
+**h4_centerpiece.png** (`src/h4_elliptic.py`). Elliptic, delay L = 2 and budget q = 10%: realised miss rate and bound by step for the static, rolling (5-step pool) and ACI (gamma 0.05) certificates, red rings where the binomial error indicator fires, step 43 dashed, with ACI's adapted delta_t underneath. Each bound is valid for a given step only under exchangeability with its own pool, which the shutdown breaks.
+
+**h4_all_delays.png** (`src/h4_elliptic.py`). The same comparison for every delay L in {0, 2, 4} and both budgets q in {10%, 20%}: realised miss rate (orange, identical across arms) and the bounds of the three arms, step 43 dashed. Longer delays mean the pool contains older, pre-shutdown steps, so the exchangeability needed for validity is weaker still.
