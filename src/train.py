@@ -76,7 +76,7 @@ if __name__ == "__main__":
                "calibration_sanity": {"roc_auc": float(roc_auc_score(ca.label, ca.score)),
                                       "pr_auc": float(average_precision_score(ca.label, ca.score))}}
     imp = pd.Series(model.booster_.feature_importance("gain"), index=F.FEATURE_COLS).sort_values(ascending=False)
-    metrics["top_feature_gain_share"] = (imp / imp.sum()).round(4).head(8).to_dict()
+    metrics["top_feature_gain_share"] = (imp / imp.sum()).round(4).head(15).to_dict()
     C.RESULTS.mkdir(exist_ok=True)
     METRICS_PATH.write_text(json.dumps(metrics, indent=2))
     joblib.dump(model, MODEL_PATH)
@@ -91,5 +91,7 @@ if __name__ == "__main__":
     for name, v in t["by_typology"].items():
         print(f"  {name:<15} n={v['n_pos']:>4} auc {v['roc_auc']:.3f} pr {v['pr_auc']:.4f} " +
               " ".join(f"{r:.2f}" for r in v["recall_at_k"].values()))
-    print("top features:", metrics["top_feature_gain_share"])
+    print("top 15 features (share of total gain):")
+    for n, v in metrics["top_feature_gain_share"].items():
+        print(f"  {n:<26}{v:.4f}")
     print("\n*** MODEL FROZEN - do not retune ***")
