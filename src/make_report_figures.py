@@ -1,4 +1,5 @@
-"""Copy the key figures to report/figures as Fig1..Fig5 (Fig2 is generated here: fixed-count vs fraction budget)."""
+"""Build report/figures: Fig1 (validity gate, redrawn from the CSV), Fig2 (fixed-count vs fraction budget), and copies of Fig3-5.
+Use --fig1-fig2 to regenerate only Fig1 and Fig2."""
 import shutil
 
 import matplotlib
@@ -26,16 +27,26 @@ def fig2():
         ax.set_xscale("log"); ax.set_xticks(x); ax.set_xticklabels([f"{v:g}" for v in x]); ax.set_title(title, fontsize=10)
         ax.set_xlabel("budget (% of entity-periods per period)"); ax.grid(alpha=0.3)
     axes[0].set_ylabel("miss rate"); axes[0].legend(fontsize=8)
-    fig.suptitle("Direct scorer, calibrate on periods 12-15, evaluate on periods 16-19: bound is below the realised miss at every budget under both definitions")
-    fig.tight_layout()
-    fig.savefig(OUT / "Fig2_budget_fixed_vs_fraction.png", dpi=130)
+    fig.suptitle("Budget curve: certified bound vs realised miss (temporal split)\n"
+                 "Direct scorer, delta 0.10; calibrate on periods 12-15, evaluate on periods 16-19", fontsize=11, x=0.5, ha="center")
+    fig.tight_layout(rect=[0, 0, 1, 0.96])
+    fig.savefig(OUT / "Fig2_budget_fixed_vs_fraction.png", dpi=200, bbox_inches="tight")
+
+
+def fig1():
+    """Fig 1 from the committed gate CSV (no rerun of the gate)."""
+    from src.validity_gate import plot
+    plot(pd.read_csv(C.RESULTS / "validity_gate.csv"), OUT / "Fig1_validity_gate.png")
 
 
 if __name__ == "__main__":
+    import sys
     OUT.mkdir(parents=True, exist_ok=True)
     F = C.FIGURES
-    for src, dst in (("validity_gate.png", "Fig1_validity_gate.png"), ("h1_typology_primary.png", "Fig3_h1_typology_primary.png"),
-                     ("h2_synthetic_delay.png", "Fig4_h2_synthetic_delay.png"), ("h4_centerpiece.png", "Fig5_h4_centerpiece.png")):
-        shutil.copy(F / src, OUT / dst)
+    if "--fig1-fig2" not in sys.argv:                 # default: copy the other figures too
+        for src, dst in (("h1_typology_primary.png", "Fig3_h1_typology_primary.png"),
+                         ("h2_synthetic_delay.png", "Fig4_h2_synthetic_delay.png"), ("h4_centerpiece.png", "Fig5_h4_centerpiece.png")):
+            shutil.copy(F / src, OUT / dst)
+    fig1()
     fig2()
     print(sorted(p.name for p in OUT.iterdir()))

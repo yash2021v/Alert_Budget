@@ -180,20 +180,27 @@ def main():
         sys.exit(1)
 
 
-def plot(df):
-    fig, ax = plt.subplots(figsize=(8, 7))
+def plot(df, out=None):
+    """Coverage vs nominal per configuration. `out` defaults to results/figures/validity_gate.png."""
+    from matplotlib.lines import Line2D
+    fig, ax = plt.subplots(figsize=(8.5, 7.5))
     labels = [f"{r.check}/{r.regime}  K={r.K_frac:.2%}  δ={r.delta}" for r in df.itertuples()]
     y = np.arange(len(df))[::-1]
-    ax.hlines(y, df["threshold"], df["nominal"], color="#bbbbbb", lw=6, label="nominal − 2 SE … nominal")
-    ax.scatter(df["coverage"], y, c=np.where(~df["gating"], "#888888", np.where(df["pass"], "#1b7f3b", "#c0392b")), zorder=3, label="realised coverage")
+    ax.hlines(y, df["threshold"], df["nominal"], color="#bbbbbb", lw=6)
+    ax.scatter(df["coverage"], y, c=np.where(~df["gating"], "#888888", np.where(df["pass"], "#1b7f3b", "#c0392b")), zorder=3)
     ax.set_yticks(y)
     ax.set_yticklabels(labels, fontsize=7)
     ax.set_xlabel("coverage of true miss rate by certified bound")
-    ax.set_title("Validity gate: realised vs nominal coverage (gray = informational, not gating)")
-    ax.legend(loc="lower right", fontsize=8)
+    ax.set_title("Validity gate: realised vs nominal coverage", fontsize=12)
+    handles = [Line2D([], [], color="#bbbbbb", lw=6, label="nominal minus 2 SE to nominal"),
+               Line2D([], [], marker="o", ls="", color="#1b7f3b", label="gating, passes"),
+               Line2D([], [], marker="o", ls="", color="#c0392b", label="gating, fails"),
+               Line2D([], [], marker="o", ls="", color="#888888", label="gray: informational, not gating")]
+    ax.legend(handles=handles, loc="upper center", bbox_to_anchor=(0.5, -0.09), ncol=2, fontsize=8, frameon=False)
     fig.tight_layout()
-    C.FIGURES.mkdir(parents=True, exist_ok=True)
-    fig.savefig(C.FIGURES / "validity_gate.png", dpi=130)
+    out = out or (C.FIGURES / "validity_gate.png")
+    out.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out, dpi=200, bbox_inches="tight")
 
 
 if __name__ == "__main__":
