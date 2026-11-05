@@ -90,12 +90,6 @@ The main results were frozen at the git tag `results-frozen`. These three additi
 - **Additive-offset ACI arm on Elliptic ("ACI-offset (post-hoc)").** Reason: the Clopper-Pearson bound depends only logarithmically on delta, so adapting delta has little authority over a jump in miss rate (`results/bound_vs_delta.csv`). Its outcome is reported in `results/h4_summary.md`, whatever it showed.
 - **H1 rerun on the primary scorer.** Reason: the primary scorer was chosen after H1 was first run on the entity-level scorer. Output: `results/coverage_by_typology_primary.csv` and `results/h1_summary.md`; the original direct-scorer file is kept.
 
-## Individual contributions
-
-- Person A: _TODO_
-- Person B: _TODO_
-
----
 
 ## Technical notes
 
